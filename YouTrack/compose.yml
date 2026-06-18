@@ -1,0 +1,40 @@
+name: meztlikpak-youtrack
+
+services:
+  youtrack:
+    container_name: meztlikpak-youtrack
+    image: "${IMAGE}"
+    restart: unless-stopped
+    env_file: ".env"
+    volumes:
+      - "backups:/opt/youtrack/backups"
+      - "configuration:/opt/youtrack/conf"
+      - "data:/opt/youtrack/data"
+      - "logs:/opt/youtrack/logs"
+    ports:
+      - "${HOST_IPV4}:${HOST_PORT}:8080"
+      - "${HOST_IPV6}:${HOST_PORT}:8080"
+    networks:
+      - meztlikpak-youtrack
+    dns:
+      - "1.1.1.1"
+      - "8.8.8.8"
+
+networks:
+  meztlikpak-youtrack:
+    name: meztlikpak-youtrack
+    driver: bridge
+
+volumes:
+  backups:
+    name: meztlikpak-youtrack-backups
+    driver: local
+  configuration:
+    name: meztlikpak-youtrack-configuration
+    driver: local
+  data:
+    name: meztlikpak-youtrack-data
+    driver: local
+  logs:
+    name: meztlikpak-youtrack-logs
+    driver: local
