@@ -1,0 +1,49 @@
+name: meztlikpak-opensign
+
+services:
+  server:
+    container_name: meztlikpak-opensign-server
+    image: "${SERVER_IMAGE}"
+    restart: unless-stopped
+    env_file: ".env"
+    volumes:
+      - "files:/usr/src/app/files"
+    ports:
+      - "${HOST_IPV4}:${HOST_SERVER_PORT}:8080"
+      - "${HOST_IPV6}:${HOST_SERVER_PORT}:8080"
+    networks:
+      - meztlikpak-opensign
+      - meztlikpak-storage
+    dns:
+      - "1.1.1.1"
+      - "8.8.8.8"
+
+  client:
+    container_name: meztlikpak-opensign-client
+    image: "${CLIENT_IMAGE}"
+    restart: unless-stopped
+    env_file: ".env"
+    depends_on:
+      - server
+    ports:
+      - "${HOST_IPV4}:${HOST_CLIENT_PORT}:3000"
+      - "${HOST_IPV6}:${HOST_CLIENT_PORT}:3000"
+    networks:
+      - meztlikpak-opensign
+      - meztlikpak-storage
+    dns:
+      - "1.1.1.1"
+      - "8.8.8.8"
+
+networks:
+  meztlikpak-opensign:
+    name: meztlikpak-opensign
+    driver: bridge
+  meztlikpak-storage:
+    external: true
+    name: meztlikpak-storage
+
+volumes:
+  files:
+    name: meztlikpak-opensign-files
+    driver: local
