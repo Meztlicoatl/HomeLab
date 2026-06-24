@@ -1,0 +1,114 @@
+name: meztlikpak-openproject
+
+services:
+  cache:
+    container_name: meztlikpak-openproject-cache
+    image: "${CACHE_IMAGE}"
+    restart: unless-stopped
+    env_file: ".env"
+    networks:
+      - meztlikpak-openproject
+
+  web:
+    container_name: meztlikpak-openproject-web
+    image: "${OPENPROJECT_IMAGE}"
+    restart: unless-stopped
+    env_file: ".env"
+    volumes:
+      - "assets:/var/openproject/assets"
+      - "./configuration/enterprise_token.rb:/app/app/models/enterprise_token.rb"
+      - "./configuration/Gemfile.plugins:/app/Gemfile.plugins"
+    ports:
+      - "${HOST_IPV4}:${HOST_PORT}:8080"
+      - "${HOST_IPV6}:${HOST_PORT}:8080"
+    networks:
+      - meztlikpak-openproject
+      - meztlikpak-storage
+    dns:
+      - "1.1.1.1"
+      - "8.8.8.8"
+    depends_on:
+      - cache
+    hostname: "${OPENPROJECT_HOST__NAME}"
+    command: "./docker/prod/web"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080${OPENPROJECT_RAILS__RELATIVE__URL__ROOT}/health_checks/default"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  worker:
+    container_name: meztlikpak-openproject-worker
+    image: "${OPENPROJECT_IMAGE}"
+    restart: unless-stopped
+    env_file: ".env"
+    volumes:
+      - "assets:/var/openproject/assets"
+      - "./configuration/enterprise_token.rb:/app/app/models/enterprise_token.rb"
+      - "./configuration/Gemfile.plugins:/app/Gemfile.plugins"
+    networks:
+      - meztlikpak-openproject
+      - meztlikpak-storage
+    dns:
+      - "1.1.1.1"
+      - "8.8.8.8"
+    depends_on:
+      - cache
+    command: "./docker/prod/worker"
+
+  cron:
+    container_name: meztlikpak-openproject-cron
+    image: "${OPENPROJECT_IMAGE}"
+    restart: unless-stopped
+    env_file: ".env"
+    volumes:
+      - "assets:/var/openproject/assets"
+      - "./configuration/enterprise_token.rb:/app/app/models/enterprise_token.rb"
+      - "./configuration/Gemfile.plugins:/app/Gemfile.plugins"
+    networks:
+      - meztlikpak-openproject
+      - meztlikpak-storage
+    dns:
+      - "1.1.1.1"
+      - "8.8.8.8"
+    depends_on:
+      - cache
+    command: "./docker/prod/cron"
+  
+  seeder:
+    container_name: meztlikpak-openproject-seeder
+    image: "${OPENPROJECT_IMAGE}"
+    restart: on-failure
+    env_file: ".env"
+    volumes:
+      - "assets:/var/openproject/assets"
+      - "./configuration/enterprise_token.rb:/app/app/models/enterprise_token.rb"
+      - "./configuration/Gemfile.plugins:/app/Gemfile.plugins"
+    command: "./docker/prod/seeder"
+    networks:
+      - meztlikpak-openproject
+      - meztlikpak-storage
+
+  hocuspocus:
+    container_name: meztlikpak-openproject-hocuspocus
+    image: "${HOCUSPOCUS_IMAGE}"
+    restart: unless-stopped
+    env_file: ".env"
+    environment:
+      SECRET: ${OPENPROJECT_COLLABORATIVE__EDITING__HOCUSPOCUS__SECRET}
+    networks:
+      - meztlikpak-openproject
+
+networks:
+  meztlikpak-openproject:
+    name: meztlikpak-openproject
+    driver: bridge
+  meztlikpak-storage:
+    external: true
+    name: meztlikpak-storage
+
+volumes:
+  assets:
+    name: meztlikpak-openproject-assets
+    driver: local
