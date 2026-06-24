@@ -1,0 +1,4 @@
+[submodule "ODK"]
+	path = ODK
+	url = git@github.com:Meztlicoatl/ODK.git
+	branch = customized-setup
